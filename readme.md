@@ -8,13 +8,9 @@ In the first tutorial, we setup and provisioned our virtual machine using bash s
 
 Ansible is one of many configuration management and orchestration tools you can choose from to provision your Vagrant machine (and servers). Other popular options are [Chef](https://www.chef.io/chef/), [Puppet](https://puppetlabs.com/), and [Salt](http://saltstack.com/). We will be using Ansible for this tutorial but feel free to check out the other options to see if they suit your situation better.
 
-Although all of these tools are great, I chose to go with Ansible because the configuration is straight-forward and you don't have to install any software on the target machine. As long as you can SSH into the machine, you can provision it with Ansible. Also, Vagrant just released version 1.8 which allows ansible to be run on the target machine instead of the host for windows machines. This is important because Ansible doesn't support using Windows as the host machine. In theory at least, this means this tutorial should work across Linux, Unix and Windows machines. 
-
 The basic idea here is that we will be writing configuration in [YAML](https://en.wikipedia.org/wiki/YAML), which ansible calls "playbooks", instead of raw commands in a shell script. This way, our provisioning configurations will read closer to english and will be self-documenting.
 
-A more powerful feature of Ansible is that, unlike the shell scripts we wrote, it aims to be [idempotent](http://docs.ansible.com/ansible/glossary.html#idempotency) and won't mindlessly run commands against your server without first considering it's current state. 
-
-Ansible's documentations describes the concept of idempotency:
+A core tenant of Ansible is that it aims to be [idempotent](http://docs.ansible.com/ansible/glossary.html#idempotency); below is the description of idempotency from Ansible's documentation:
 
 > The concept that change commands should only be applied when they need to be applied, and that it is better to describe the desired state of a system than the process of how to get to that state. As an analogy, the path from North Carolina in the United States to California involves driving a very long way West, but if I were instead in Anchorage, Alaska, driving a long way west is no longer the right way to get to California. Ansible’s Resources like you to say “put me in California” and then decide how to get there. If you were already in California, nothing needs to happen, and it will let you know it didn’t need to change anything.
 
@@ -22,7 +18,7 @@ Ansible's documentations describes the concept of idempotency:
 
 ## Updating our Vagrantfile
 
-We will be running the exact same simple app and static files we did in the first tutorial but this time, we will tell Vagrant to use Ansible as our provisioner. 
+We will be running the exact same simple app and static files we did in the first tutorial; but this time we will tell Vagrant to use Ansible as our provisioner. 
 
 To do that, let's remove any references to shell scripts in our Vagrantfile and add the Ansible configuration:
 
@@ -44,7 +40,7 @@ end
 
 Basically, we just told Vagrant that we want to use the "ansible" provider and that the [playbook](http://docs.ansible.com/ansible/playbooks.html) we want to use is located at `~/Projects/tutorial2/provisioning/playbook.yml`. Playbooks let you tell Ansible which machine you want to provision, what user you should connect as, which tasks to run and more. 
 
-Reading over the Ansible documentation can get overwhelming pretty quick because it has a ***lot*** of options. However, keep in mind that you only need to use the features relavent to your project and you can learn new ones as you go. We will be going through all the basic things you need and you can expand your knowledge from there. Ansible has great documentation too so you'll find 99% of what you need there.
+Reading over the Ansible documentation can get overwhelming pretty quick because it has a ***lot*** of options. However, keep in mind that you only need to use the features relevant to your project and you can learn new ones as you go. We will be going through all the basic things you need and you can expand your knowledge from there. Ansible has great documentation too so you'll find 99% of what you need there.
 
 ## Creating our first playbook
 
@@ -132,7 +128,7 @@ If you take a look at the [get_url documentation](http://docs.ansible.com/ansibl
 
 > If yes and dest is not a directory, will download the file every time and replace the file if the contents change. If no, the file will only be downloaded if the destination does not exist. Generally should be yes only for small local files. Prior to 0.6, this module behaved as if yes was the default.
 
-Since the node.js binary is pretty small at ~11MB, we will set the force parameter to "yes" so that ansible will download the file every time we provision our VM but it will *only replace the file if the contents change*.)
+Since the node.js binary is pretty small at ~11MB, we will set the force parameter to "yes" so that ansible will download the file every time we provision our VM but it will *only replace the file if the contents change*.
 
 #### Tags
 
@@ -180,48 +176,13 @@ PLAY RECAP ********************************************************************
 default                    : ok=2    changed=0    unreachable=0    failed=0
 ~~~
 
-Now, for illustration purposes only, let's manually ssh into our vagrant machine and delete the binary file that ansible has downloaded for us. This excercise will accomplish a couple of things; it will prove to you that ansible did indeed download the file to the appropriate directory and it will change the state of the machine so that we can see how ansible will react to that change. 
-
-SSH into our VM and navigate to our home directory and find the file:
-
-~~~
-vagrant ssh
-cd ~
-ls -lh
-~~~
-
-You should see the tarball in that directory, let's go ahead and remove that and then logout of the VM
-
-~~~
-sudo rm node-v4.2.4-linux-x64.tar.gz
-ls # file should be empty
-logout
-~~~
-
-Now that we are back on the host machine, run `vagrant provision` again and see what happens:
-
-~~~
-==> default: Checking for host entries
-==> default: Running provisioner: ansible...
-    default: Running ansible-playbook...
-
-PLAY [all] ********************************************************************
-
-GATHERING FACTS ***************************************************************
-ok: [default]
-
-TASK: [nodejs | Download node.js binary tarball] ******************************
-changed: [default]
-
-PLAY RECAP ********************************************************************
-default                    : ok=2    changed=1    unreachable=0    failed=0
-~~~
-
-You'll notice that ansible detected the change and let you know about it. Just to be clear, you don't want to go into the VM and manually install/remove environment settings. This was purely for demonstration. The only things you'll want to run/install manually on the machine are app related things such as running the app or installing it's depencies (which are in your package.json file).
+If you were to delete the node archive and re-provision your VM, you'd see the changed count go back to 1 as the removed file is replaced.
 
 #### Fully installing node.js
 
 Now that we've got the basic idea down, let's go ahead and fully install node.js. We'll introduce some new helpful ansible modules and techniques while we are at it. 
+
+##### Unarchiving the binary tarball
 
 Now that we have some configuration that installs node, the next step is to unarchive the tarball file and move it to our /usr/local directory. 
 
@@ -238,6 +199,8 @@ Now that we have some configuration that installs node, the next step is to unar
 ~~~
 
 Here, we are using the [unarchive](http://docs.ansible.com/ansible/unarchive_module.html) module in place of `tar` in our old shell scripts along with the `copy=no` option. If copy is set to "yes", it will attempt to copy a file from your *host* machine instead of the VM, which we obviously don't want.
+
+##### Symlinking node
 
 Next, we will symlink our node binary to the /usr/local/node directory. we can accomplish this using the [file](http://docs.ansible.com/ansible/file_module.html) module with `state` option set to "link".
 
@@ -256,6 +219,8 @@ Next, we will symlink our node binary to the /usr/local/node directory. we can a
   file: src=/usr/local/node-v4.0.0-linux-x64 dest=/usr/local/node state=link
   tags: nodejs
 ~~~
+
+##### Updating our node path
 
 And finally, we will want to update our `.profile` so that it can add /usr/local/node to our path. 
 
@@ -531,9 +496,13 @@ PLAY RECAP ********************************************************************
 default                    : ok=9    changed=4    unreachable=0    failed=0
 ~~~
 
+#### Summation
 
+Over the first two lessons, we have learned to automate the process of setting up and provisioning our virtual machines. At a basic level, you should now be able to write a Vagrantfile that describes how your VM should be setup along with Ansible scripts that installs and configures the apppriate software/settings.
 
+The time we are investing now in getting our development environment setup will pay off big time during development and especially when we are ready to deploy. The only thing we'll need to do is to tell Ansible how to connect to our production server and it will use the same ansible scripts to provision it so that it mirrors our development environment.
 
+In the next lesson, we will be wrapping up our development process by adding a task runner that will help us with code linting, running tests, syncing updated code to our VM and restarting our application.
 
 
 
