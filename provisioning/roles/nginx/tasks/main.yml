@@ -1,0 +1,10 @@
+---
+- name: Install nginx
+  apt: pkg=nginx-full
+  tags: nginx
+
+- name: Setup reverse proxy
+  template: src=default dest=/etc/nginx/sites-available/
+  tags: nginx
+  notify:
+    - restart nginx

@@ -1,0 +1,17 @@
+---
+- name: Download node.js binary tarball
+  get_url: url=https://nodejs.org/dist/v{{node.version}}/node-v{{node.version}}-linux-x64.tar.gz dest=/home/{{ansible_ssh_user}} force=yes
+  tags: nodejs
+
+- name: Unarchive node.js tarball
+  unarchive: src=/home/{{ ansible_ssh_user }}/node-v{{node.version}}-linux-x64.tar.gz dest=/usr/local copy=no
+  tags: nodejs
+
+
+- name: Add /usr/local symlink to unarchived tarball
+  file: src=/usr/local/node-v{{node.version}}-linux-x64 dest=/usr/local/node state=link
+  tags: nodejs
+
+- name: Add ~/.profile with updated node path
+  template: src=profile dest=/home/{{ ansible_ssh_user }}/.profile
+  tags: nodejs

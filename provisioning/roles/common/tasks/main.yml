@@ -1,0 +1,8 @@
+---
+- name: Update apt cache
+  apt: update-cache=yes cache_valid_time={{ 60*60*4 }}
+  tags: common
+
+- name: Upgrade Packages
+  apt: upgrade=safe cache_valid_time={{ 60*60*4 }}
+  tags: common
