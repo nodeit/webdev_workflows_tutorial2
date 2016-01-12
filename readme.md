@@ -518,7 +518,7 @@ Add the following to our main.yml file:
   tags: common
 ~~~
 
-Here, we are using the `apt` module to update and upgrade our apt packages. We are also using a variable expression to set cache_valid_time to 4 hours (60 seconds x 60 minutes * 4 hours). 
+Here, we are using the `apt` module to update and upgrade our apt packages. We are also using a variable expression to set cache_valid_time to 4 hours (60 seconds x 60 minutes x 4 hours). 
 
 Basically, this just tells ansible not to perform this task if it has been run in the last 4 hours. This will save you quite a bit of time if you need to re-provision your app a few times while you are making tweaks.
 
