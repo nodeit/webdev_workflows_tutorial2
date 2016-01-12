@@ -496,6 +496,47 @@ PLAY RECAP ********************************************************************
 default                    : ok=9    changed=4    unreachable=0    failed=0
 ~~~
 
+#### Upgrading the cache
+
+The last thing we need to do in order to match our bash script functionality is to add one more role that will update the apt cache and upgrade our packages. To do that, let's make one more directory for our `common` tasks and add a `main.yml` file to it:
+
+~~~
+mkdir -p ~/Projects/tutorial2/provisioning/roles/common/tasks
+touch ~/Projects/tutorial2/provisioning/roles/common/tasks/main.yml
+~~~
+
+Add the following to our main.yml file:
+
+~~~
+---
+- name: Update apt cache
+  apt: update-cache=yes cache_valid_time={{ 60*60*4 }}
+  tags: common
+
+- name: Upgrade Packages
+  apt: upgrade=safe cache_valid_time={{ 60*60*4 }}
+  tags: common
+~~~
+
+Here, we are using the `apt` module to update and upgrade our apt packages. We are also using a variable expression to set cache_valid_time to 4 hours (60 seconds x 60 minutes * 4 hours). 
+
+Basically, this just tells ansible not to perform this task if it has been run in the last 4 hours. This will save you quite a bit of time if you need to re-provision your app a few times while you are making tweaks.
+
+And finally, don't forget to update your `playbook.yml` file to let ansible know about this new role:
+
+~~~
+---
+- hosts: all
+  user: vagrant
+
+  roles:
+    - common
+    - nginx
+    - nodejs
+~~~
+
+You'll want to put this role before the others so that the apt cache is up to date before running any other commands. 
+
 #### Summation
 
 Over the first two lessons, we have learned to automate the process of setting up and provisioning our virtual machines. At a basic level, you should now be able to write a Vagrantfile that describes how your VM should be setup along with Ansible scripts that installs and configures the apppriate software/settings.
