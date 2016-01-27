@@ -32,13 +32,16 @@ Vagrant.configure(2) do |config|
   config.vm.synced_folder "myapp", "/var/www/myapp", type: "rsync"
 
   config.vm.provision "ansible" do |ansible|
-    ansible.playbook = "provisioning/playbook.yml"    
+    ansible.sudo = true
+    ansible.playbook = "provisioning/playbook.yml"
   end
 
 end
 ~~~
 
 Basically, we just told Vagrant that we want to use the "ansible" provider and that the [playbook](http://docs.ansible.com/ansible/playbooks.html) we want to use is located at `~/Projects/tutorial2/provisioning/playbook.yml`. Playbooks let you tell Ansible which machine you want to provision, what user you should connect as, which tasks to run and more. 
+
+**Note:** Notice the `ansible.sudo = true` setting. This will allow us to run *all* ansible commands as sudo. Although it is not necessary to run all commands as sudo, it makes life much easier for us during the tutorial. You can always set sudo on a per task, role or playbook basis for your own projects. 
 
 Reading over the Ansible documentation can get overwhelming pretty quick because it has a ***lot*** of options. However, keep in mind that you only need to use the features relevant to your project and you can learn new ones as you go. We will be going through all the basic things you need and you can expand your knowledge from there. Ansible has great documentation too so you'll find 99% of what you need there.
 
